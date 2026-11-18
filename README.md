@@ -155,3 +155,10 @@ A fresh local Python 3.9.6 environment installed dependencies and generated its
 first report in 48.35 seconds with pip caching disabled. This excludes installing
 Python, downloading the repository and human reading time; see the acceptance
 review for the precise scope. The clean environment also passed all 177 tests.
+
+## Additional resilience checks
+
+See [testing and benchmark scope](docs/testing.md) for the latest 186-case test
+run, repeated-generation and session-isolation checks, and optional synthetic
+performance measurements. Historical clean-install results above describe the
+177-case suite that existed at the time of that verification.
