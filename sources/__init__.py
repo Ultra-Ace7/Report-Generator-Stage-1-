@@ -1,0 +1,1 @@
+"""TechInnovate report generator components."""

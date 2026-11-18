@@ -1,0 +1,7 @@
+{
+  "monthly_targets": [
+    {"month": "2026-10-01", "sales_target": "8000.00", "currency": "AUD"},
+    {"month": "2026-11-01", "sales_target": "10000.00", "currency": "AUD"}
+  ],
+  "snapshot_benchmark": {"completion_rate_target": "0.80", "scope": "demo_task_snapshot"}
+}
