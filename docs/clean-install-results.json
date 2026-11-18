@@ -1,0 +1,38 @@
+{
+  "stages": [
+    {
+      "name": "create-venv",
+      "seconds": 1.69,
+      "exit_code": 0
+    },
+    {
+      "name": "install",
+      "seconds": 30.81,
+      "exit_code": 0
+    },
+    {
+      "name": "first-report",
+      "seconds": 15.84,
+      "exit_code": 0
+    },
+    {
+      "name": "pip-check",
+      "seconds": 0.48,
+      "exit_code": 0
+    },
+    {
+      "name": "tests",
+      "seconds": 13.9,
+      "exit_code": 0
+    },
+    {
+      "name": "second-report",
+      "seconds": 0.67,
+      "exit_code": 0
+    }
+  ],
+  "setup_to_first_report_seconds": 48.35,
+  "review_date": "2026-11-18",
+  "scope": "Local macOS, fresh Python 3.9.6 venv, committed source export, pip cache disabled. Excludes Python installation, repository download, human reading time and Word viewing.",
+  "application_commit": "c2aa782a801a4035c904a669312117e8c4c4d956"
+}

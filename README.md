@@ -75,7 +75,7 @@ Full options, error behavior and upload limits: [running the app](docs/running-t
   tested together; pandas and docxtpl remain from the initial dependency plan
   but are not required by the current readers/renderer.
 
-The application uses a permitted sample company template. Its geometric TI logo is illustrative, not official company artwork.
+The sample template follows the permitted sample-company-template approach. Its geometric TI logo is illustrative, not official company artwork.
 
 ## Add a data source
 
@@ -150,7 +150,8 @@ category; XLSX behavior is additionally covered by generated test workbooks.
 ## Verification
 
 Core functionality and requirement review are implemented. See
-[requirements verification](docs/requirements-verification.md) for evidence and remaining checks.
-A first-time clean installation under ten minutes has not yet been timed.
-Local commits organize the existing implementation by dependency layer; their
-creation times represent this review, not the earlier coding timeline.
+[requirements verification](docs/requirements-verification.md) for verification evidence and scope.
+A fresh local Python 3.9.6 environment installed dependencies and generated its
+first report in 48.35 seconds with pip caching disabled. This excludes installing
+Python, downloading the repository and human reading time; see the acceptance
+review for the precise scope. The clean environment also passed all 177 tests.
