@@ -118,13 +118,19 @@ if 'generated_report' in st.session_state:
     st.success('Your Word report is ready.')
     st.write(result['summary'])
     st.table([{'Metric': name, 'Value': value} for name, value in result['metrics']])
-    word_column, pdf_column = st.columns(2)
-    word_column.download_button('Download Word report', data=result['data'], file_name=result['filename'],
-                                mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document', key='download',
-                                use_container_width=True)
-    pdf_column.download_button('Download PDF report', data=result.get('pdf', b''),
-                               file_name=Path(result['filename']).with_suffix('.pdf').name,
-                               mime='application/pdf', key='download_pdf', disabled='pdf' not in result,
-                               use_container_width=True)
+    st.markdown("""<style>
+    .st-key-report_downloads [data-testid="stHorizontalBlock"] {flex-wrap: nowrap !important;}
+    .st-key-report_downloads [data-testid="column"],
+    .st-key-report_downloads [data-testid="stColumn"] {min-width: 0 !important; flex: 1 1 0 !important; width: 0 !important;}
+    </style>""", unsafe_allow_html=True)
+    with st.container(key='report_downloads'):
+        word_column, pdf_column = st.columns(2)
+        word_column.download_button('Download Word report', data=result['data'], file_name=result['filename'],
+                                    mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document', key='download',
+                                    use_container_width=True)
+        pdf_column.download_button('Download PDF report', data=result.get('pdf', b''),
+                                   file_name=Path(result['filename']).with_suffix('.pdf').name,
+                                   mime='application/pdf', key='download_pdf', disabled='pdf' not in result,
+                                   use_container_width=True)
     if 'pdf_error' in result:
         st.warning(result['pdf_error'])
