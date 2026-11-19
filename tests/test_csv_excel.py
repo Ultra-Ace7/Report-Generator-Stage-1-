@@ -10,7 +10,7 @@ from core.exceptions import ReportError
 from sources.base import merge_sources
 from sources.csv_excel import COLUMNS, CsvExcelReader
 
-SAMPLES = Path(__file__).resolve().parents[1] / "sample_data"
+SAMPLES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 ROW = ["SO-1", "2026-10-01", "Demo Co", "Support", "10.20", "AUD"]
 
 
@@ -64,8 +64,8 @@ def test_reordered_headers(tmp_path):
 
 @pytest.mark.parametrize("rows,header,message", [
     ([], COLUMNS, "no orders"),
-    ([ROW], COLUMNS[:-1], "header"),
-    ([ROW], ("order_id",) * 6, "header"),
+    ([ROW], COLUMNS[:-1], "Missing required sales fields: currency"),
+    ([ROW], ("order_id",) * 6, "Multiple columns map"),
     ([ROW + ["extra"]], COLUMNS, "number of fields"),
     ([ROW[:-1]], COLUMNS, "number of fields"),
     ([ROW, ROW], COLUMNS, "Duplicate order"),

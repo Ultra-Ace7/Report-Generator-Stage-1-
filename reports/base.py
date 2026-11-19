@@ -84,5 +84,5 @@ def snapshot_notes(snapshot) -> Tuple[str, ...]:
     return (
         "Task snapshot mode: {}. Snapshot timestamp: {}.".format(snapshot.mode, snapshot.captured_at.isoformat()),
         "Task source: {}.".format(snapshot.source),
-        "Tasks are demonstration data without historical dates; the requested sales date range does not filter them. They are not linked to sales customers.",
+        "Tasks are supplied snapshot records; Created, when supplied, is a creation date and not a completion date; the requested sales date range does not filter them. They are not linked to sales customers.",
     )

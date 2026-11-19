@@ -2,7 +2,8 @@
 
 All supplied data is synthetic. These are input fixtures, not generated business
 reports. The supplied table fixture is CSV; the reader also supports values-only .xlsx
-files with a Sales worksheet and the same columns.
+files with the same columns. The UI defaults to the first worksheet; an optional
+name selects another worksheet. The CLI defaults to `Sales` for compatibility.
 
 ## Sales records: sample_data/sales.csv
 
@@ -83,3 +84,62 @@ October target achievement will be 87.5%. The offline task snapshot has 5 tasks,
 3 completed, 2 pending and a 60% completion rate versus the 80% demo benchmark
 (a difference of -20 percentage points). These are expected controls for future
 report builders; this step does not implement report summaries or charts.
+
+## External CSV/XLSX column names
+
+The internal six-field schema stays strict. Input headers are trimmed,
+case-insensitive, and runs of spaces, underscores or hyphens are equivalent.
+Mapping is by explicit name, never position or fuzzy inference.
+
+| Canonical field | Accepted aliases (in addition to the canonical name) |
+| --- | --- |
+| order_id | Order ID, Order Number, Transaction ID |
+| order_date | Date, Order Date, Transaction Date |
+| customer | Customer, Customer Name, Client, Client Name |
+| service | Service, Service Type, Product |
+| revenue | Revenue, Sales Amount, Amount, Total Amount |
+| currency | Currency, Currency Code |
+
+Each required field must map exactly once. Unrelated additional columns are
+ignored before model validation; rows must still match the full header width.
+Missing currency is an error even though the internal model has an AUD default.
+For example, missing fields produce `Missing required sales fields: revenue,
+currency.` followed by accepted aliases. Duplicate synonyms produce
+`Multiple columns map to 'revenue': Revenue, Total Amount. Please keep only one.`
+Invalid values identify the physical row, canonical field and validation reason.
+
+All revenue aliases retain the same meaning: recognized sales excluding tax.
+`Amount` and `Total Amount` are rejected when other headers contain a separate
+word tax, taxes, GST, VAT, refund(s) or discount(s), including space/underscore/
+hyphen-separated names. No tax/refund/discount arithmetic is inferred. Supply a
+verified Revenue field instead. This explicit guard is not a general financial
+schema interpreter; users must verify the financial meaning of all inputs.
+Unknown aliases are not guessed. Excel formula/error cells remain rejected,
+including in extra columns. PDF and API contracts are unchanged.
+
+Blank UI worksheet selection reads each workbook's own first worksheet. An
+explicit name applies to every uploaded workbook and must exist in each; there
+is no fallback to a different sheet. Use a common sheet name or leave the setting
+blank when combining workbooks with differently named first worksheets.
+
+## Sales-order PDF tables
+
+The UI PDF input and CLI `--metrics` path now dispatch either the existing target
+layout or text-based sales tables with visible cell borders. Sales tables must
+contain the six canonical fields or documented aliases. Wrapped headers are
+normalized as whitespace. Repeated headers on subsequent pages are skipped;
+every data row is validated. Multi-page tables must repeat their header on each
+page; unlabelled continuation tables are unsupported. Scanned/image-only PDFs,
+merged cells and arbitrary unruled layouts are not supported. Do not use these
+layouts for input: table extraction is not general document understanding.
+
+PDF sales dates accept ISO YYYY-MM-DD and explicit year-first YYYY/M/D, e.g.
+2026/10/3 becomes 2026-10-03. Ambiguous day/month dates are rejected. Amounts and
+AUD currency follow the same strict sales model; no values are invented.
+A PDF containing only targets still requires actual sales from another source.
+The current UI accepts one PDF per run; a sales PDF can be combined with CSV,
+Excel or an API. Duplicate orders across sources are rejected.
+
+`sample_data/sales_orders.pdf` contains five fictional October orders, total
+AUD 7,390.00 and average AUD 1,478.00. Select 1-31 October 2026 to reproduce these
+values. It has no sales target; target comparison is unavailable.

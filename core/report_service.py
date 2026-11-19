@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 import logging
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
+from sources.sales_api import ApiSalesReader
 from typing import Mapping, Optional, Sequence
 
 from pydantic import ValidationError
@@ -39,7 +41,17 @@ class ReportService:
             if not readers:
                 raise DataValidationError('Select at least one data source.')
             data = merge_sources(*(reader.read() for reader in readers))
+            if report_type == 'sales_summary' and not data.orders:
+                raise DataValidationError('Sales Summary requires sales data containing orders and revenue. Target-only PDFs and task APIs do not contain sales orders; supply a sales CSV/Excel, sales-table PDF or Sales orders API.')
             content = self.builders[report_type].build(data, period)
+            api_notes = []
+            for reader in readers:
+                if isinstance(reader, ApiSalesReader):
+                    parts = urlsplit(reader.url)
+                    source = urlunsplit((parts.scheme, parts.netloc, parts.path, '', ''))
+                    api_notes.append('Sales API source: {} (query omitted). Values are supplied by the endpoint; transaction dates and AUD currency are validated, not independently audited. No missing sales facts are inferred.'.format(source))
+            if api_notes:
+                content = content.model_copy(update={'notes': content.notes + tuple(api_notes)})
             path = self.renderer.render(content, output_path)
             logger.info('Report generated: type=%s start=%s end=%s', report_type, period.start, period.end)
             return GeneratedReport(content=content, path=path)

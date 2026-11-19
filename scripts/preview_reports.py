@@ -30,9 +30,9 @@ def main(argv=None):
                             format="%(asctime)s %(levelname)s %(name)s %(message)s")
         period = DateRange(start=args.start, end=args.end)
         samples = ROOT / "sample_data"
-        data = merge_sources(CsvExcelReader(samples / "sales.csv").read(),
-                             PdfMetricsReader(samples / "monthly_metrics.pdf").read(),
-                             OfflineTaskReader(samples / "todos_fixture.json", samples / "todos_fixture_metadata.json").read())
+        from sources.task_files import TaskFilesReader
+        data = merge_sources(CsvExcelReader(samples / 'Sales_Summary_Dummy_Data/sales_2026-10.csv').read(),
+                             TaskFilesReader([samples / 'Operations_KPI_Dummy_Data/operations_tasks_2026-10.csv']).read())
         reports = [SalesSummaryBuilder().build(data, period), OperationsKpiBuilder().build(data, period)]
         rendered = [(report, render_chart(report.chart)) for report in reports]
         output = ROOT / "output" / "preview"

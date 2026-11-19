@@ -9,10 +9,10 @@ def test_offline_source_command(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(check_sources, "ROOT", tmp_path)
     assert check_sources.main([]) == 0
     output = capsys.readouterr().out
-    assert "offline_fixture" in output
-    assert "Sales orders: 8" in output
-    assert "Monthly targets: 2" in output
-    assert "Tasks: 5 | Completed: 3" in output
+    assert "uploaded_files" in output
+    assert "Sales orders: 5" in output
+    assert "Monthly targets: 0" in output
+    assert "Tasks: 12 | Completed: 9" in output
 
 
 def test_source_command_reports_failure_without_traceback(tmp_path, monkeypatch, capsys):

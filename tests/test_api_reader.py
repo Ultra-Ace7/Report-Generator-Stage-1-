@@ -12,7 +12,7 @@ from sources.base import merge_sources
 from sources.csv_excel import CsvExcelReader
 from sources.pdf_reader import PdfMetricsReader
 
-SAMPLES = Path(__file__).resolve().parents[1] / "sample_data"
+SAMPLES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 TASK = {"userId": 1, "id": 1, "title": "Demo", "completed": True}
 
 

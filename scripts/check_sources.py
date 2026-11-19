@@ -8,14 +8,14 @@ from core.exceptions import ReportError
 from sources.api_reader import ApiTaskReader, OfflineTaskReader
 from sources.base import merge_sources
 from sources.csv_excel import CsvExcelReader
-from sources.pdf_reader import PdfMetricsReader
+from sources.task_files import TaskFilesReader
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Check sample data readers; this does not generate a report.")
-    parser.add_argument("--live-api", action="store_true", help="Fetch JSONPlaceholder instead of using the explicit offline fixture")
+    parser.add_argument("--live-api", action="store_true", help="Fetch JSONPlaceholder instead of using the current local task CSV")
     args = parser.parse_args(argv)
     samples = ROOT / "sample_data"
     try:
@@ -25,12 +25,10 @@ def main(argv=None):
             filename=str(log_dir / "report_generator.log"), level=logging.INFO,
             format="%(asctime)s %(levelname)s %(name)s %(message)s",
         )
-        api = ApiTaskReader() if args.live_api else OfflineTaskReader(
-            samples / "todos_fixture.json", samples / "todos_fixture_metadata.json",
-        )
+        api = ApiTaskReader() if args.live_api else TaskFilesReader([
+            samples / 'Operations_KPI_Dummy_Data/operations_tasks_2026-10.csv'])
         data = merge_sources(
-            CsvExcelReader(samples / "sales.csv").read(),
-            PdfMetricsReader(samples / "monthly_metrics.pdf").read(),
+            CsvExcelReader(samples / 'Sales_Summary_Dummy_Data/sales_2026-10.csv').read(),
             api.read(),
         )
     except (ReportError, OSError) as exc:

@@ -1,25 +1,18 @@
 # Word template and rendering (Step 5)
 
-## Generate sample reports
+## Generate a report from current samples
 
 ```bash
-python -m scripts.generate_samples
+python cli.py --report sales_summary --start 2026-10-01 --end 2026-10-31 --sales sample_data/Sales_Summary_Dummy_Data/sales_2026-10.csv --output output/template_check.docx
 ```
 
-This reads the sales CSV, metrics PDF and explicit offline task fixture, builds
-both report types and creates DOCX files under a new `output/samples_<timestamp>`
-directory. It uses the existing `templates/company_template.docx` and never
-rebuilds or saves over it. Use `--output-dir <directory>` to choose a destination;
-existing report filenames are rejected rather than overwritten.
-
-The supplied October examples use synthetic data and an offline task snapshot.
-They demonstrate document generation, not a live API run. The additional
-`SalesSummary_2026-10_live_demo.docx` example was generated through the CLI using
-a real API response together with CSV and PDF inputs, and visually reviewed.
+Use a new output filename for each run. Earlier sample-generation scripts and
+historical reports referenced below used fixtures that are no longer bundled.
+Normal generation uses the existing template and never recreates it.
 
 ## Template contract
 
-Both report types use the same A4 company template. It contains a sample TI logo,
+Both report types use the same A4 company template. It contains the official TechInnovate logo downloaded from the company website,
 Arial styles, a persistent page header, footer page numbering and these exact
 standalone paragraph anchors, each appearing once:
 
@@ -56,11 +49,12 @@ used as report destinations. Rendering errors are logged.
 `scripts/create_template.py` creates the initial sample template and refuses to
 overwrite an existing file. Normal report generation never invokes it. For an
 intentional redesign, call its `create_template(new_path)` function to produce a
-separate candidate, then validate that candidate before adopting it. The sample
-logo is a simple geometric mark created for this task, not the company's official
-branding. No external design assets or AI model are required.
+separate candidate, then validate that candidate before adopting it. The logo is loaded from `templates/assets/techinnovate-logo.png` with its original
+proportions; its official source is recorded in `templates/assets/SOURCE.md`.
+The footer shows TechInnovate and the page number. These are demonstration
+reports, not company-issued documents. No AI model is required.
 
-## Verification
+## Verification scope
 
 Automated tests compare the template's SHA-256 before and after each report run;
 header, footer, styles and embedded logo bytes also match the resulting reports.
@@ -73,6 +67,6 @@ runtime dependency. PDF/PNG renders are temporary QA artifacts; the requested
 outputs are DOCX. Visual review checks both sample reports and a multi-page task
 table. Word versions and installed fonts can change pagination slightly.
 
-The two reviewed examples are retained in `sample_reports/` for Git submission; generated runs under `output/` remain ignored. The original template and
+Earlier reviewed examples used the previous sample template and are no longer bundled; generated runs under `output/` remain ignored. The original template and
 both sample reports were visually checked page by page. Both examples are two
 pages; a 40-task pagination test is three pages with a repeated table header.

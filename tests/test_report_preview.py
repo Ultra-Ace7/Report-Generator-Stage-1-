@@ -12,8 +12,8 @@ def test_preview_writes_both_reports_and_charts(tmp_path, monkeypatch, capsys):
     assert len(files) == 4
     sales = json.loads(next(path for path in files if path.name.startswith("sales") and path.suffix == ".json").read_text())
     assert sales["report_type"] == "sales_summary"
-    assert len(sales["tables"][0]["rows"]) == 4
-    assert "offline_fixture" in " ".join(sales["notes"])
+    assert len(sales["tables"][0]["rows"]) == 5
+    assert "uploaded_files" in " ".join(sales["notes"])
     assert "No Word reports" in capsys.readouterr().out
 
 

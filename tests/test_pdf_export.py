@@ -10,7 +10,7 @@ from renderer import pdf_exporter
 from scripts import export_pdf as command
 
 ROOT = Path(__file__).resolve().parents[1]
-PDF = (ROOT / 'sample_data/monthly_metrics.pdf').read_bytes()
+PDF = (ROOT / 'tests/fixtures/monthly_metrics.pdf').read_bytes()
 
 
 def test_converter_preserves_input_and_uses_isolated_profile(monkeypatch):
@@ -96,3 +96,14 @@ def test_cli_writes_pdf_and_refuses_overwrite(monkeypatch, tmp_path):
     assert command.main([str(source), str(output)]) == 1
     assert output.read_bytes() == PDF
     assert source.read_bytes() == b'original'
+
+
+@pytest.fixture(autouse=True)
+def uploaded_current_sales(monkeypatch):
+    import streamlit as st
+    from io import BytesIO
+    def upload(*args, **kwargs):
+        data = BytesIO((ROOT/'sample_data/Sales_Summary_Dummy_Data/sales_2026-10.csv').read_bytes())
+        data.name = 'sales.csv'
+        return [data]
+    monkeypatch.setattr(st, 'file_uploader', upload)

@@ -6,7 +6,8 @@ import httpx
 import pytest
 
 from core.exceptions import DataValidationError, ReportError, SourceReadError
-from core.input_selection import SAMPLES, build_readers, save_upload
+from core.input_selection import save_upload
+from support import SAMPLES, build_readers
 from core.report_service import ReportService
 from core.schemas import DateRange
 from sources.api_reader import ApiTaskReader
@@ -35,7 +36,7 @@ def test_live_api_pipeline_uses_actual_response_not_fixture(tmp_path):
 @pytest.mark.parametrize('kind,readers,message', [
     ('unknown', [], 'supported report'),
     ('sales_summary', [], 'at least one'),
-    ('sales_summary', build_readers(task_mode='offline'), 'No sales orders'),
+    ('sales_summary', build_readers(task_mode='offline'), 'requires sales data'),
     ('operations_kpi', build_readers([SAMPLES / 'sales.csv']), 'requires a task snapshot'),
 ])
 def test_missing_requirements_do_not_write_files(tmp_path, kind, readers, message):

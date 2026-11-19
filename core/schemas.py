@@ -92,13 +92,19 @@ class Task(Record):
     user_id: int = Field(strict=True, gt=0)
     title: str = Field(min_length=1)
     completed: StrictBool
+    created: Optional[date] = None
+
+    @field_validator("created", mode="before")
+    @classmethod
+    def created_date(cls, value):
+        return None if value is None else parse_date(value)
 
 
 class TaskSnapshot(Record):
     tasks: Tuple[Task, ...] = Field(min_length=1)
     captured_at: datetime
     source: str = Field(min_length=1)
-    mode: Literal["live_demo", "offline_fixture"]
+    mode: Literal["live_demo", "offline_fixture", "uploaded_files"]
 
     @field_validator("captured_at")
     @classmethod

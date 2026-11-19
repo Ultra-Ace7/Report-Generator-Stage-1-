@@ -22,7 +22,7 @@ PERIOD = DateRange(start='2026-10-01', end='2026-10-31')
 
 @pytest.fixture
 def reports():
-    samples = ROOT / 'sample_data'
+    samples = ROOT / 'tests' / 'fixtures'
     data = merge_sources(CsvExcelReader(samples / 'sales.csv').read(), PdfMetricsReader(samples / 'monthly_metrics.pdf').read(),
                          OfflineTaskReader(samples / 'todos_fixture.json', samples / 'todos_fixture_metadata.json').read())
     return [SalesSummaryBuilder().build(data, PERIOD), OperationsKpiBuilder().build(data, PERIOD)]

@@ -5,15 +5,14 @@ import sys
 import pytest
 
 import cli
-from core.input_selection import SAMPLES
+from support import SAMPLES
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def args(output):
     return ['--report', 'sales_summary', '--start', '2026-10-01', '--end', '2026-10-31',
-            '--sales', str(SAMPLES / 'sales.csv'), '--metrics', str(SAMPLES / 'monthly_metrics.pdf'),
-            '--tasks', 'offline', '--output', str(output)]
+            '--sales', str(ROOT / 'sample_data/Sales_Summary_Dummy_Data/sales_2026-10.csv'), '--output', str(output)]
 
 
 def test_cli_runs_from_another_working_directory(tmp_path):
@@ -42,7 +41,7 @@ def test_cli_missing_file_returns_one(tmp_path, capsys):
 
 
 def test_cli_duplicate_inputs_are_rejected(tmp_path, capsys):
-    assert cli.main(args(tmp_path / 'duplicate.docx') + ['--sales', str(SAMPLES / 'sales.csv')]) == 1
+    assert cli.main(args(tmp_path / 'duplicate.docx') + ['--sales', str(ROOT / 'sample_data/Sales_Summary_Dummy_Data/sales_2026-10.csv')]) == 1
     assert 'Duplicate order' in capsys.readouterr().err
 
 
@@ -53,6 +52,20 @@ def test_cli_never_overwrites_existing_output(tmp_path, capsys):
     assert output.read_bytes() == b'original'
 
 
-def test_cli_operations_with_only_tasks(tmp_path, capsys):
+def test_cli_operations_with_only_tasks(tmp_path, capsys, monkeypatch):
+    from sources.api_reader import ApiTaskReader, OfflineTaskReader
+    monkeypatch.setattr(ApiTaskReader, "read", lambda self: OfflineTaskReader(SAMPLES/"todos_fixture.json", SAMPLES/"todos_fixture_metadata.json").read())
     assert cli.main(['--report', 'operations_kpi', '--start', '2026-10-01', '--end', '2026-10-31',
-                     '--tasks', 'offline', '--output', str(tmp_path / 'operations.docx')]) == 0
+                     '--tasks', 'live', '--output', str(tmp_path / 'operations.docx')]) == 0
+
+
+def test_cli_custom_task_api_url(tmp_path, monkeypatch):
+    import httpx
+    seen=[]
+    def handler(request):
+        seen.append(str(request.url))
+        return httpx.Response(200,json=[{'userId':1,'id':1,'title':'Task','completed':True}])
+    monkeypatch.setattr('sources.api_reader.PublicHTTPTransport',lambda:httpx.MockTransport(handler))
+    assert cli.main(['--report','operations_kpi','--start','2026-10-01','--end','2026-10-31',
+        '--tasks','live','--task-api-url','https://example.com/tasks','--output',str(tmp_path/'custom.docx')])==0
+    assert seen==['https://example.com/tasks']

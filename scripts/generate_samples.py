@@ -23,7 +23,7 @@ def main(argv=None):
         logging.basicConfig(filename=str(ROOT / 'logs' / 'report_generator.log'), level=logging.INFO,
                             format='%(asctime)s %(levelname)s %(name)s %(message)s')
         sample = ROOT / 'sample_data'
-        readers = build_readers([sample / 'sales.csv'], sample / 'monthly_metrics.pdf', 'offline')
+        readers = build_readers([sample / 'Sales_Summary_Dummy_Data/sales_2026-10.csv'], sheet_name=None, task_files=[sample / 'Operations_KPI_Dummy_Data/operations_tasks_2026-10.csv'])
         period = DateRange(start='2026-10-01', end='2026-10-31')
         service = ReportService(ROOT / 'templates' / 'company_template.docx')
         for report_type, name in (('sales_summary', 'SalesSummary'), ('operations_kpi', 'OperationsKPI')):

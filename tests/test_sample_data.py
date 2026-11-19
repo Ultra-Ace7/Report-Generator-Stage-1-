@@ -9,7 +9,7 @@ import pdfplumber
 from core.data_rules import select_orders, target_coverage
 from core.schemas import BusinessData, DateRange, SnapshotBenchmark, TaskSnapshot
 
-SAMPLES = Path(__file__).resolve().parents[1] / "sample_data"
+SAMPLES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 
 
 def test_sales_fixture_totals_and_target_coverage():

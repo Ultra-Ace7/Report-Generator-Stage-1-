@@ -1,5 +1,4 @@
 """Create the sample template explicitly; generation never calls this script."""
-from io import BytesIO
 from pathlib import Path
 
 from docx import Document
@@ -8,7 +7,6 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Mm, Pt, RGBColor
-from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -70,22 +68,13 @@ def create_template(path):
         margins.append(element)
     properties.append(margins)
     table_style.element.append(properties)
-    # A deliberately simple geometric sample logo, not the company's real mark.
-    logo = Image.new('RGB', (120, 80), '#163D52')
-    draw = ImageDraw.Draw(logo)
-    draw.rectangle((20, 18, 55, 28), fill='white')
-    draw.rectangle((32, 28, 43, 63), fill='white')
-    draw.rectangle((73, 18, 84, 63), fill='#43BAC3')
-    buffer = BytesIO()
-    logo.save(buffer, format='PNG')
-    buffer.seek(0)
+    logo_path = ROOT / 'templates' / 'assets' / 'techinnovate-logo.png'
     header = section.header.paragraphs[0]
-    header.add_run().add_picture(buffer, width=Inches(.45))
-    header.add_run('  TECHINNOVATE').bold = True
+    header.add_run().add_picture(str(logo_path), width=Inches(1.9))
     header.add_run('   |   Business performance reports').font.size = Pt(9)
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    footer.add_run('TechInnovate sample company  |  Page ').font.size = Pt(8)
+    footer.add_run('TechInnovate  |  Page ').font.size = Pt(8)
     field = OxmlElement('w:fldSimple')
     field.set(qn('w:instr'), 'PAGE')
     footer._p.append(field)
@@ -103,7 +92,7 @@ def create_template(path):
     doc.add_paragraph('[[DETAILS]]')
     doc.add_paragraph('Data scope and interpretation', 'Heading 1')
     doc.add_paragraph('[[NOTES]]')
-    doc.core_properties.author = 'TechInnovate sample company'
+    doc.core_properties.author = 'TechInnovate'
     doc.core_properties.title = 'Company report template'
     doc.core_properties.subject = 'Shared template for sales and operations reports'
     path.parent.mkdir(parents=True, exist_ok=True)

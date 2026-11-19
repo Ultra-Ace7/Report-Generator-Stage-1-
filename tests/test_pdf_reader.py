@@ -7,7 +7,7 @@ from core.exceptions import ReportError
 from sources.base import read_boundary
 from sources.pdf_reader import PdfMetricsReader, parse_metrics_text
 
-SAMPLES = Path(__file__).resolve().parents[1] / "sample_data"
+SAMPLES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 TEXT = """Reporting Month Sales Target (AUD)
 2026-10 8000.00
 2026-11 10000.00

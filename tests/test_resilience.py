@@ -10,7 +10,8 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from core.exceptions import DataValidationError, SourceReadError
-from core.input_selection import MAX_UPLOAD_BYTES, SAMPLES, build_readers, save_upload
+from core.input_selection import MAX_UPLOAD_BYTES, save_upload
+from support import SAMPLES, build_readers
 from core.report_service import DEFAULT_TEMPLATE, ReportService
 from core.schemas import DateRange
 from sources.api_reader import ApiTaskReader
@@ -94,13 +95,14 @@ def test_two_app_sessions_keep_results_and_settings_separate():
     first, second = start_app(), start_app()
     first.button(key='generate').click().run()
     saved = first.session_state['generated_report']['data']
-    second.selectbox(key='report_type').select('operations_kpi').run()
+    second.checkbox(key='use_api').check().run()
     second.button(key='generate').click().run()
-    assert second.session_state['generated_report']['filename'].startswith('operations_kpi')
+    assert second.session_state['generated_report']['filename'].startswith('sales_summary')
     first.run()
     assert first.selectbox(key='report_type').value == 'sales_summary'
     assert first.session_state['generated_report']['data'] == saved
-    second.multiselect(key='sources').set_value([]).run()
+    second.checkbox(key='use_files').uncheck().run()
+    second.checkbox(key='use_api').uncheck().run()
     second.button(key='generate').click().run()
     assert second.error and not second.get('download_button')
     first.run()
@@ -118,7 +120,7 @@ def test_repeated_ui_generation_replaces_result_without_duplicating_controls():
         assert len(app.success) == 1
         assert len(app.get('download_button')) == 2
         doc = Document(BytesIO(app.session_state['generated_report']['data']))
-        assert len(doc.tables[1].rows) == 5
+        assert len(doc.tables[1].rows) == 6
         assert len(doc.inline_shapes) == 1
 
 
@@ -129,16 +131,16 @@ def test_live_api_failure_clears_old_download_and_recovers_in_same_session(monke
     def fail(self):
         raise SourceReadError('Task API timed out. Please try again.')
     monkeypatch.setattr(ApiTaskReader, 'read', fail)
-    app.selectbox(key='task_mode').select('live').run()
+    app.checkbox(key='use_api').check().run()
     app.button(key='generate').click().run()
     assert not app.exception
     assert 'timed out' in app.error[0].value
     assert not app.get('download_button')
-    app.selectbox(key='task_mode').select('offline').run()
+    app.checkbox(key='use_api').uncheck().run()
     app.button(key='generate').click().run()
     assert not app.exception and not app.error
     assert app.success and app.get('download_button')
-    assert app.session_state['generated_report']['filename'].endswith('_offline.docx')
+    assert app.session_state['generated_report']['filename'] == 'sales_summary_2026-10-01_2026-10-31.docx'
 
 
 @pytest.fixture(autouse=True)
@@ -147,3 +149,20 @@ def stub_optional_pdf_export(monkeypatch):
     # Real conversion and PDF error handling have separate verification.
     from renderer import pdf_exporter
     monkeypatch.setattr(pdf_exporter, 'export_pdf', lambda data: b'%PDF-test-double')
+
+
+@pytest.fixture(autouse=True)
+def uploaded_current_sales(monkeypatch):
+    import streamlit as st
+    from io import BytesIO
+    def upload(*args, **kwargs):
+        data = BytesIO((ROOT/'sample_data/Sales_Summary_Dummy_Data/sales_2026-10.csv').read_bytes())
+        data.name = 'sales.csv'
+        return [data]
+    monkeypatch.setattr(st, 'file_uploader', upload)
+
+
+@pytest.fixture(autouse=True)
+def controlled_task_api(monkeypatch):
+    from sources.api_reader import OfflineTaskReader
+    monkeypatch.setattr(ApiTaskReader, 'read', lambda self: OfflineTaskReader(SAMPLES/'todos_fixture.json', SAMPLES/'todos_fixture_metadata.json').read())

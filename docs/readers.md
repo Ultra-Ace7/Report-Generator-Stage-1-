@@ -33,14 +33,16 @@ will choose adapters without rewriting the report calculations.
 ## CSV and Excel
 
 `CsvExcelReader(path, sheet_name="Sales")` supports UTF-8 CSV (including BOM) and
-`.xlsx` files. All six documented columns are required; order may vary. Header
-names are trimmed but case-sensitive. Missing, duplicate and extra columns fail.
+`.xlsx` files. All six canonical fields are required; order may vary. Headers use the explicit
+[alias mapping](data-contract.md#external-csvxlsx-column-names). Case and separators
+are normalized; missing or duplicate mappings fail. Unrelated extra columns are ignored.
 Blank rows are skipped; nonblank malformed rows fail with a row number when
 possible. Empty data is an error. IDs remain strings, so leading zeros survive.
 CSV uses the standard-library reader to avoid automatic date/number conversion.
 
-Excel uses openpyxl to retain cell types. The named `Sales` worksheet must exist;
-pass another sheet name explicitly if necessary. Real Excel dates at midnight
+Excel uses openpyxl to retain cell types. The default reader/CLI sheet is `Sales`;
+pass another sheet name explicitly, or `None`/an empty string for the first
+worksheet. The UI uses the first worksheet by default. Real Excel dates at midnight
 are normalized to calendar dates, while timestamps with a time component fail.
 Formula/error cells fail rather than relying on potentially stale cached values.
 Use values-only tables and text cells for IDs. Legacy `.xls` is unsupported.
@@ -57,8 +59,10 @@ is never read by this adapter.
 
 ## API and explicit offline mode
 
-`ApiTaskReader(client=None, timeout=10.0)` reads the JSONPlaceholder `/todos`
-endpoint. The timeout is a per-operation HTTPX timeout, not a total wall-clock
+`ApiTaskReader(client=None, timeout=10.0, url=TODOS_URL)` defaults to the
+JSONPlaceholder `/todos` endpoint and accepts compatible public HTTPS endpoints.
+The default transport validates DNS answers and pins the destination IP while
+retaining TLS hostname verification. See [URL restrictions](running-the-app.md#compatible-api-and-network-safeguards). The timeout is a per-operation HTTPX timeout, not a total wall-clock
 budget. Redirects are not followed. HTTP failures, connection failures, timeouts,
 invalid JSON, empty responses, invalid records and duplicate task IDs fail.
 A supplied HTTPX client remains owned by its caller; internally created clients

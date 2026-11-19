@@ -7,13 +7,18 @@ from tempfile import TemporaryDirectory
 
 from pydantic import ValidationError
 import streamlit as st
+from streamlit import config as streamlit_config
 
 from core.exceptions import DataValidationError, ReportError
-from core.input_selection import SAMPLES, build_readers, save_upload
+from core.input_selection import MAX_UPLOAD_BYTES, build_readers, save_uploads, save_upload
+from sources.api_reader import TODOS_URL
 from core.logging_config import configure_logging
 from core.report_service import REPORT_LABELS, ReportService
 from core.schemas import DateRange
 from renderer.pdf_exporter import export_pdf, PdfExportError
+
+# Keep the widget aligned with backend validation even when launched outside the project directory.
+streamlit_config.set_option('server.maxUploadSize', MAX_UPLOAD_BYTES // (1024 * 1024))
 
 st.set_page_config(page_title='TechInnovate Report Generator', layout='wide')
 st.title('TechInnovate Report Generator')
@@ -24,31 +29,36 @@ except OSError:
     st.error('Cannot open the application log. Check write access to the logs folder.')
     st.stop()
 
-SOURCE_LABELS = {
-    'Sales files': 'Excel / CSV',
-    'PDF targets': 'PDF',
-    'Task snapshot': 'API',
-}
-
 settings, guidance = st.columns([2, 1], gap='large')
 with settings:
     report_type = st.selectbox('Report type', options=list(REPORT_LABELS), format_func=REPORT_LABELS.get, key='report_type')
-    selected = st.multiselect('Data sources', ['Sales files', 'PDF targets', 'Task snapshot'],
-                              default=['Sales files', 'PDF targets', 'Task snapshot'],
-                              format_func=SOURCE_LABELS.get, key='sources')
-    file_mode = st.radio('File inputs', ['Sample files', 'Upload files'], horizontal=True, key='file_mode')
-    sales_uploads, metrics_upload = [], None
-    if file_mode == 'Upload files':
-        if 'Sales files' in selected:
-            sales_uploads = st.file_uploader('Sales CSV or Excel files', type=['csv', 'xlsx'], accept_multiple_files=True, key='sales_uploads')
-        if 'PDF targets' in selected:
-            metrics_upload = st.file_uploader('Monthly metrics PDF', type=['pdf'], key='metrics_upload')
-        st.caption('Use the documented sample column names and PDF layout. Maximum 20 MB per file.')
-    sheet_name = st.text_input('Excel worksheet name', value='Sales', key='sheet_name') if 'Sales files' in selected else 'Sales'
+    st.subheader('Data Inputs')
+    use_files = st.checkbox('Upload Files', value=True, key='use_files',
+        help='Upload CSV, Excel or PDF files. Multiple files are supported when your report requires combined data.')
+    uploads, sheet_name = [], None
+    if use_files:
+        uploads = st.file_uploader('CSV, Excel or PDF files', type=['csv', 'xlsx', 'pdf'],
+            accept_multiple_files=True, key='uploads')
+        st.caption('Maximum 20 MB per file. Sales reports require sales fields; KPI reports require Task ID, Task Name, User ID, Status, Created. PDF tables must have visible cell borders. Multiple task files are combined with duplicate IDs rejected. Sales reports accept at most one PDF.')
+        if any(Path(file.name).suffix.lower() == '.xlsx' for file in uploads):
+            sheet_name = st.text_input('Excel worksheet name (optional)', key='sheet_name',
+                help='Leave blank to read the first worksheet in each workbook. A supplied name applies to all uploaded workbooks.').strip() or None
+    use_api = st.checkbox('Fetch from REST API', key='use_api',
+        help='Fetch data using an explicitly selected supported API schema. An internet connection is required.')
+    api_kind = 'Task data'
+    sales_api_url = None
+    api_url = TODOS_URL
     task_mode = 'none'
-    if 'Task snapshot' in selected:
-        task_mode = st.selectbox('Task data', ['offline', 'live'],
-            format_func=lambda value: 'Offline demo fixture' if value == 'offline' else 'Live public demo API', key='task_mode')
+    if use_api:
+        if report_type == 'sales_summary':
+            api_kind = st.selectbox('API data type', ['Task data', 'Sales orders'], key='api_kind')
+        api_url = st.text_input('API URL', value=TODOS_URL, key='api_url')
+        st.caption('Public HTTPS endpoints only (port 443); redirects are blocked. Task data requires an array with userId, id, title and completed.' if api_kind == 'Task data' else 'Public HTTPS sales endpoint only (port 443). No redirects or automatic schema inference.')
+        if api_kind == 'Sales orders':
+            sales_api_url = api_url
+            st.info('Sales JSON: a nonempty array with order_id, order_date (YYYY-MM-DD), customer, service, revenue and currency (AUD). Documented sales aliases are supported. Replace the task endpoint with a compatible sales endpoint; /todos and shopping carts do not supply sales orders.')
+        else:
+            task_mode = 'live'
     left, right = st.columns(2)
     start = left.date_input('Start date', date(2026, 10, 1), key='start_date')
     end = right.date_input('End date', date(2026, 10, 31), key='end_date')
@@ -56,21 +66,21 @@ with settings:
 with guidance:
     st.subheader('Before you generate')
     if report_type == 'sales_summary':
-        st.write('Excel/CSV sales files are required. PDF text extraction supplies targets; REST API data or an explicit offline sample supplies a separate task overview.')
+        st.write('Sales Summary needs actual orders and revenue from sales CSV/Excel, a supported sales-table PDF or a Sales orders API. Task APIs supply tasks only; target-only PDFs supply benchmarks rather than orders. Combine these with sales files, or select Operations / KPI Report for API tasks alone.')
+        has_sales_input = use_files and (any(Path(file.name).suffix.lower() in ('.csv', '.xlsx', '.pdf') for file in uploads))
+        if not has_sales_input and sales_api_url is None:
+            st.warning('No sales input selected. Add a sales CSV/Excel or sales-table PDF before generating Sales Summary.')
         st.write('Dates filter sales inclusively. Monthly targets are compared only for complete months with all targets available.')
     else:
-        st.write('REST API task data or an explicit offline sample is required. PDF text extraction supplies an optional completion benchmark. Excel/CSV sales records do not affect task KPIs.')
+        st.write('Upload task CSV/Excel/PDF files with Task ID, Task Name, User ID, Status and Created, or enable the Task API. Status must be Completed or Pending; Created is YYYY-MM-DD. Legacy task API dates appear as Not provided. KPIs describe all supplied tasks. Use one task source per run: uploaded files or API.')
         st.write('The date range is context only. Undated tasks cannot represent monthly activity.')
-    if task_mode == 'offline':
-        st.info('Offline demo: 5 synthetic tasks. No API request will be made.')
-    elif task_mode == 'live':
-        st.info('Live demo: tasks are fetched when you generate. API failures are shown; offline data is never substituted automatically.')
-    st.caption('All supplied sample files contain fictional data. Both reports use the same company Word template.')
+    if task_mode == 'live':
+        st.info('Tasks are fetched when you generate. API failures are shown without substituting sample data.')
+    st.caption('Both reports use the same company Word template.')
 
 # Hide a previous result whenever any input changes, including file contents.
-upload_signatures = tuple((file.name, sha256(file.getvalue()).hexdigest()) for file in sales_uploads)
-pdf_signature = (metrics_upload.name, sha256(metrics_upload.getvalue()).hexdigest()) if metrics_upload is not None else None
-signature = (report_type, tuple(selected), file_mode, sheet_name, task_mode, str(start), str(end), upload_signatures, pdf_signature)
+upload_signatures = tuple((file.name, sha256(file.getvalue()).hexdigest()) for file in uploads)
+signature = (report_type, use_files, sheet_name, task_mode, api_url, api_kind, str(start), str(end), upload_signatures)
 if st.session_state.get('result_signature') != signature:
     st.session_state.pop('generated_report', None)
 
@@ -80,24 +90,23 @@ if st.button('Generate Word report', type='primary', key='generate'):
         period = DateRange(start=start, end=end)
         with st.spinner('Reading sources and preparing your report...'):
             with TemporaryDirectory(prefix='techinnovate-report-') as temp:
-                sales_files, metrics_file = [], None
-                if 'Sales files' in selected:
-                    if file_mode == 'Sample files':
-                        sales_files = [SAMPLES / 'sales.csv']
+                sales_files, metrics_file, task_files = [], None, []
+                if use_files:
+                    if not uploads:
+                        raise DataValidationError('Upload at least one CSV, Excel or PDF file, or disable Upload Files to use an API alone.')
+                    if report_type == 'operations_kpi':
+                        task_files = [save_upload(file, temp, 'task_{}'.format(i), ('.csv', '.xlsx', '.pdf')) for i, file in enumerate(uploads)]
                     else:
-                        if not sales_uploads:
-                            raise DataValidationError('Upload at least one sales CSV or Excel file, or choose Sample files.')
-                        sales_files = [save_upload(file, temp, 'sales_{}'.format(i), ('.csv', '.xlsx')) for i, file in enumerate(sales_uploads)]
-                if 'PDF targets' in selected:
-                    if file_mode == 'Sample files':
-                        metrics_file = SAMPLES / 'monthly_metrics.pdf'
-                    else:
-                        if metrics_upload is None:
-                            raise DataValidationError('Upload a monthly metrics PDF, or deselect PDF.')
-                        metrics_file = save_upload(metrics_upload, temp, 'metrics', ('.pdf',))
-                filename = '{}_{}_{}_{}.docx'.format(report_type, start, end, task_mode)
+                        sales_files, metrics_file = save_uploads(uploads, temp)
+                if report_type == 'sales_summary' and not sales_files and metrics_file is None and sales_api_url is None:
+                    raise DataValidationError('Sales Summary requires sales data containing orders and revenue. Task APIs and target-only PDFs do not supply actual sales. Enable Upload Files and add a sales CSV/Excel or supported sales-table PDF, use a Sales orders API. To report on API tasks alone, select Operations / KPI Report.')
+                if report_type == 'operations_kpi' and task_mode == 'none' and not task_files:
+                    raise DataValidationError('Operations / KPI Report requires a task snapshot. Upload task CSV/Excel/PDF files or enable Fetch from REST API.')
+                if task_files and task_mode == 'live':
+                    raise DataValidationError('Choose uploaded task files or the Task API, not both; a report uses one task snapshot.')
+                filename = '{}_{}_{}.docx'.format(report_type, start, end)
                 result = ReportService().generate(report_type, period,
-                    build_readers(sales_files, metrics_file, task_mode, sheet_name), Path(temp) / filename)
+                    build_readers(sales_files, metrics_file, task_mode, sheet_name, api_url=api_url, sales_api_url=sales_api_url, task_files=task_files), Path(temp) / filename)
                 st.session_state['generated_report'] = {'data': result.path.read_bytes(), 'filename': filename,
                     'summary': result.content.summary, 'metrics': [(m.label, m.display) for m in result.content.metrics]}
                 st.session_state['result_signature'] = signature

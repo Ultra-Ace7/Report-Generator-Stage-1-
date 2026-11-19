@@ -13,7 +13,7 @@ demonstration data. Known limitations are stated alongside verification results.
 | One original template | Both use templates/company_template.docx | Pass |
 | Branding retained; original immutable | Tests compare template hash and header/footer/styles/logo bytes | Pass |
 | Text, variable rows, chart | Both reports contain narrative, dynamic tables and one chart; 200-row structural test | Pass |
-| Choose type, sources and date range | Streamlit controls and CLI arguments | Pass |
+| Choose type, sources and date range | Streamlit Data Inputs controls (independent files/API), report/date controls and unchanged CLI arguments | Pass |
 | DOCX with clear filename | UI derives filename from type/dates/mode; CLI accepts destination | Pass |
 | Clear errors and logs | Bad inputs/API errors reach UI and log; no silent fallback; bad-upload recovery test | Pass |
 | UI-independent generation | CLI and UI use ReportService | Pass |
@@ -63,3 +63,9 @@ installed. It excludes repository download, Python installation, human reading
 and Word viewing time. It is not an independent novice usability study or a
 cross-platform guarantee. Both report outputs were reopened and their expected
 metrics and preserved branding checked.
+
+## Input workflow regression
+
+The 19 November 2026 Data Inputs update passed all 237 tests and a real API
+source check. See [current verification evidence](testing.md#data-inputs-refactor-verification--19-november-2026).
+Earlier timings and counts above remain historical measurements.

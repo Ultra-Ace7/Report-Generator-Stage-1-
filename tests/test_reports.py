@@ -17,7 +17,7 @@ from sources.csv_excel import CsvExcelReader
 from sources.pdf_reader import PdfMetricsReader
 
 PERIOD = DateRange(start="2026-10-01", end="2026-10-31")
-SAMPLES = Path(__file__).resolve().parents[1] / "sample_data"
+SAMPLES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 
 
 def order(identifier="1", revenue="10.00", day="2026-10-01"):
@@ -102,7 +102,7 @@ def test_multi_month_target_sum(sample_data):
 def test_operations_known_values(sample_data):
     report = OperationsKpiBuilder().build(sample_data, PERIOD)
     values = metrics(report)
-    assert [values[key].value for key in ("total_tasks", "completed_tasks", "pending_tasks", "completion_rate", "completion_benchmark", "benchmark_gap")] == [5, 3, 2, 60, 80, -20]
+    assert [values[key].value for key in ("total_tasks", "completed_tasks", "pending_tasks", "completion_rate")] == [5, 3, 2, 60]
     assert "20.0 percentage points below" in report.summary
     assert "not a measure of monthly company performance" in report.summary
     assert "context only" in report.period_label
@@ -126,8 +126,8 @@ def test_operations_requires_snapshot():
 
 def test_missing_benchmark_is_not_zero():
     report = OperationsKpiBuilder().build(SourceData(snapshot=snapshot()), PERIOD)
-    assert metrics(report)["completion_benchmark"].value is None
-    assert metrics(report)["benchmark_gap"].display == "Unavailable"
+    assert "completion_benchmark" not in metrics(report)
+    assert "benchmark_gap" not in metrics(report)
     assert "unavailable" in report.summary
 
 
@@ -140,7 +140,7 @@ def test_missing_benchmark_is_not_zero():
 def test_operations_benchmark_boundaries(states, target, rate, gap, status):
     report = OperationsKpiBuilder().build(SourceData(snapshot=snapshot(states), benchmark=SnapshotBenchmark(completion_rate_target=target)), PERIOD)
     assert metrics(report)["completion_rate"].value == rate
-    assert metrics(report)["benchmark_gap"].value == gap
+    assert "benchmark_gap" not in metrics(report)
     assert status in report.summary
 
 

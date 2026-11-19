@@ -14,23 +14,92 @@ source venv/bin/activate
 python -m streamlit run app.py --server.address 127.0.0.1
 ```
 
-Open http://127.0.0.1:8501. Select report type, one or more sources, sample or
-uploaded files, task mode, and date range. Click **Generate Word report**, review
-the result summary and download the DOCX. Both report types use the bundled
-company template. The UI does not modify it.
+Open http://127.0.0.1:8501. Both report types use the bundled immutable company template.
 
-Sample mode uses sales.csv and monthly_metrics.pdf. Upload mode accepts multiple
-CSV/XLSX sales files and one PDF in the documented layout. Excel defaults to the
-Sales worksheet; change the worksheet field if needed. Individual uploaded files
-are limited to 20 MB. Temporary inputs and output are removed after generation;
-only the generated download bytes remain in the current UI session. Changing any
-input clears the previous result so a stale download is not presented as current.
+## Data Inputs workflow
 
-Offline tasks use the explicit fixture. Live tasks call JSONPlaceholder on each
-generation; a failed call displays an error and never substitutes fixture data.
-Sales Summary requires sales records; targets and task overview are optional.
-Operations/KPI requires tasks, with an optional PDF benchmark; sales are not used
-in task calculations. Dates do not filter undated task snapshots.
+Choose a report type and date range, then configure **Data Inputs**:
+
+- **Upload Files** enables local input. **Use bundled sample files** loads
+  `sales.csv` and `monthly_metrics.pdf` for a quick demonstration. Clear that
+  checkbox to use one multi-file upload widget accepting `.csv`, `.xlsx`, `.pdf`.
+- **Fetch from REST API** independently enables a live request. Its URL defaults
+  to `https://jsonplaceholder.typicode.com/todos`. It can be used with files or
+  alone for Operations/KPI. Fetching occurs only on generation.
+- **Offline Sample Task Data** is a separate, explicitly labelled five-task
+  fixture, selected initially for the offline demo. It is available when API
+  fetching is disabled. An API failure never automatically loads this fixture.
+
+To demonstrate all three actual source types, select Sales Summary, upload the
+sample sales CSV (or XLSX) and metrics PDF together, and enable **Fetch from REST
+API**. Generate once: sales amounts, PDF targets and a live task overview appear
+in the same report. Bundled sample files can also be combined with the live API.
+Offline fixture data alone is not evidence of a real REST request.
+
+For file-only processing, leave **Upload Files** enabled, disable API fetching
+and clear **Offline Sample Task Data**. No network is used. For API-only
+Operations/KPI, disable **Upload Files** and enable the API option.
+
+| Report | Required input | Optional input |
+| --- | --- | --- |
+| Sales Summary | Valid CSV/XLSX sales with orders in the selected period | PDF sales targets; API or offline task overview |
+| Operations/KPI | API tasks or explicit offline task fixture | PDF completion benchmark; sales files are validated if supplied but do not affect task KPIs |
+
+Dates filter sales inclusively. Monthly targets require complete months and all
+corresponding targets. Tasks have no historical dates: their snapshot is labelled
+with source, retrieval time and mode, and is not filtered by the selected dates.
+Missing data does not become a fabricated zero or other invented metric.
+
+### File validation and multiple-file policy
+
+Each file is limited to 20 MB and saved under a generated temporary name. Suffixes
+route inputs; readers then validate actual contents and the documented schemas.
+Temporary inputs and outputs are removed after generation. Changing any effective
+input invalidates the previous download.
+
+- CSV: UTF-8 (optional BOM), required fields `order_id`, `order_date`, `customer`,
+  `service`, `revenue`, `currency`; documented aliases and unrelated extra columns
+  are supported, and column order can vary. See the
+  [data contract](data-contract.md) for value and currency rules.
+- XLSX: the same sales columns; values-only cells, no formulas or error cells.
+  **Excel worksheet name (optional)** appears only for XLSX uploads. Blank uses
+  each workbook's first worksheet; a name applies to every uploaded workbook.
+  A missing named worksheet fails clearly. CSV and PDF have no worksheet field.
+- PDF: text extraction from the documented monthly-metrics layout only; scanned
+  PDFs, arbitrary layouts, corrupt files and invalid targets are rejected.
+- Multiple CSV/XLSX files are combined. Duplicate order IDs are rejected rather
+  than double-counted. At most one PDF is accepted; multiple PDFs are rejected
+  because target/benchmark selection would otherwise be ambiguous.
+
+### Compatible API and network safeguards
+
+The response must be a nonempty JSON array. Every object must contain exactly
+`userId` (positive integer), `id` (unique positive integer), `title` (nonempty
+string) and `completed` (JSON boolean). Extra/missing keys, duplicate IDs, wrong
+types and arbitrary unrelated API schemas are rejected. Example:
+
+```json
+[{"userId": 1, "id": 1, "title": "Prepare report", "completed": true}]
+```
+
+Only public HTTPS URLs on port 443 are accepted, without credentials or fragments.
+Local/internal hostnames and nonpublic literal IPs are blocked. Before connecting,
+all resolved addresses must be public; the transport pins one validated address
+while preserving the original Host and TLS certificate hostname. This avoids a
+second hostname resolution changing the destination. Redirects and environment
+proxies are disabled. The default HTTPX timeout is 10 seconds per network
+operation, not an overall deadline; operating-system DNS resolution has its own
+timeout. The adapter does not provide authentication or arbitrary schema mapping.
+Injected clients are a trusted developer/test extension point; the UI always uses
+the protected transport. Never inject an untrusted client into this pipeline.
+
+HTTP errors, timeouts, connection failures, invalid JSON and incompatible records
+show an error and leave no successful report download. Correct the input and
+regenerate; no automatic offline substitution occurs.
+
+Click **Generate Word report** and download the result. Optional PDF conversion
+runs automatically; **Download PDF report** stays to the right of **Download Word
+report**. Word remains available if PDF conversion is unavailable.
 
 ## CLI examples
 
@@ -89,14 +158,3 @@ running application.
 
 - Streamlit downloads: https://docs.streamlit.io/1.40.0/develop/api-reference/widgets/st.download_button
 - Streamlit application tests: https://docs.streamlit.io/develop/api-reference/app-testing
-
-## Source labels
-
-The UI identifies the required formats directly: **Excel / CSV**,
-**PDF** and **API**.
-PDF input extracts text from the documented metrics layout. Select **Live public
-demo API** under Task data for an actual REST request; **Offline demo fixture**
-reads local sample data and does not satisfy a live API demonstration by itself.
-
-Optional PDF output is prepared automatically during generation.
-**Download PDF report** appears to the right of **Download Word report**. See [PDF export setup](pdf-export.md).
