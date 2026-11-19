@@ -92,8 +92,8 @@ running application.
 
 ## Source labels
 
-The UI identifies the required formats directly: **Excel / CSV files (sales)**,
-**PDF files (targets and benchmarks)** and **REST API / offline sample (tasks)**.
+The UI identifies the required formats directly: **Excel / CSV**,
+**PDF** and **API**.
 PDF input extracts text from the documented metrics layout. Select **Live public
 demo API** under Task data for an actual REST request; **Offline demo fixture**
 reads local sample data and does not satisfy a live API demonstration by itself.

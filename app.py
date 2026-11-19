@@ -24,9 +24,9 @@ except OSError:
     st.stop()
 
 SOURCE_LABELS = {
-    'Sales files': 'Excel / CSV files (sales)',
-    'PDF targets': 'PDF files (targets and benchmarks)',
-    'Task snapshot': 'REST API / offline sample (tasks)',
+    'Sales files': 'Excel / CSV',
+    'PDF targets': 'PDF',
+    'Task snapshot': 'API',
 }
 
 settings, guidance = st.columns([2, 1], gap='large')
@@ -92,7 +92,7 @@ if st.button('Generate Word report', type='primary', key='generate'):
                         metrics_file = SAMPLES / 'monthly_metrics.pdf'
                     else:
                         if metrics_upload is None:
-                            raise DataValidationError('Upload a monthly metrics PDF, or deselect PDF files (targets and benchmarks).')
+                            raise DataValidationError('Upload a monthly metrics PDF, or deselect PDF.')
                         metrics_file = save_upload(metrics_upload, temp, 'metrics', ('.pdf',))
                 filename = '{}_{}_{}_{}.docx'.format(report_type, start, end, task_mode)
                 result = ReportService().generate(report_type, period,
