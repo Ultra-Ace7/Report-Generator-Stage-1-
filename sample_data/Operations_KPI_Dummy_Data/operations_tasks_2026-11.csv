@@ -1,0 +1,11 @@
+﻿Task ID,Task Name,User ID,Status,Created
+201,Audit endpoint compliance,1001,Completed,2026-11-01
+202,Upgrade reporting service,1003,Completed,2026-11-02
+203,Investigate slow API calls,1002,Completed,2026-11-04
+204,Refresh staff access list,1001,Completed,2026-11-06
+205,Update SLA dashboard,1003,Pending,2026-11-08
+206,Resolve DNS incident,1002,Completed,2026-11-09
+207,Test patch deployment,1001,Completed,2026-11-11
+208,Review cloud spending,1003,Pending,2026-11-13
+209,Optimize support triage,1002,Completed,2026-11-15
+210,Reconcile device inventory,1001,Pending,2026-11-18

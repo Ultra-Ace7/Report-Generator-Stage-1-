@@ -1,0 +1,6 @@
+Order Number,Transaction Date,Client Name,Service Type,Sales Amount,Currency Code
+NOV-001,2026-11-02,Acme Digital Pty Ltd,Cloud Hosting,1900,AUD
+NOV-002,2026-11-06,Coastal Labs,IT Support,1100,AUD
+NOV-003,2026-11-10,Urban Media Pty Ltd,Cybersecurity,2350,AUD
+NOV-004,2026-11-15,Bright Retail,Website Development,2150,AUD
+NOV-005,2026-11-18,Southside Studio,Systems Integration,1150,AUD
