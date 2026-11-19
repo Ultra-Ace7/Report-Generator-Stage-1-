@@ -24,7 +24,7 @@ demonstration data. Known limitations are stated alongside verification results.
 | Sample source files | CSV, PDF and API JSON fixture plus metadata | Pass |
 | Two generated sample reports | Two offline samples plus one live-API sales sample | Pass |
 | New reader generates within ten minutes | Fresh Python 3.9.6 venv, uncached install and first CLI report: 48.35 seconds | Local automated setup passed; see timing scope below |
-| PDF export | Optional bonus, not implemented | Not required |
+| PDF export | Local LibreOffice conversion, UI download and CLI export; two PDF samples | Implemented; optional dependency |
 | Scheduling/email/accounts/cloud | Explicitly Stage 2/out of scope | Intentionally absent |
 
 ## Verification evidence
@@ -36,8 +36,8 @@ Automated checks exercise bad files, failed APIs, input errors, template
 immutability and variable-length tables. Visual inspection in the preceding
 stage covered both offline reports, both pages of the live sales report, and
 multi-page table pagination. Browser download was separately verified by
-reopening the downloaded DOCX. The optional PDF QA renders are not an application
-PDF-export feature.
+reopening the downloaded DOCX. The optional application PDF export and its separate verification are described
+in [PDF export](pdf-export.md). Earlier QA renders were only inspection artifacts.
 
 ## Fresh-environment verification (18 November 2026)
 

@@ -12,3 +12,6 @@ logs/*
 # Existing PyCharm project environment and IDE settings
 venv/
 .idea/
+
+# Machine-local optional PDF converter location
+.pdf-converter-path

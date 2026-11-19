@@ -1,3 +1,4 @@
+import pytest
 from datetime import date
 from io import BytesIO
 from pathlib import Path
@@ -26,7 +27,7 @@ def test_sales_generate_download_and_input_change_hides_stale_result():
     assert result['filename'].endswith('_offline.docx')
     with ZipFile(BytesIO(result['data'])) as archive:
         assert b'AUD 7,000.00' in archive.read('word/document.xml')
-    assert len(app.get('download_button')) == 1
+    assert len(app.get('download_button')) == 2
     app.date_input(key='end_date').set_value(date(2026, 10, 30)).run()
     assert not app.get('download_button')
 
@@ -117,3 +118,11 @@ def test_bad_uploaded_file_shows_error_and_application_recovers(monkeypatch):
     assert not app.exception
     assert app.success
     assert app.get('download_button')
+
+
+@pytest.fixture(autouse=True)
+def stub_optional_pdf_export(monkeypatch):
+    # UI regression tests remain independent of an installed office application.
+    # Real conversion and PDF error handling have separate verification.
+    from renderer import pdf_exporter
+    monkeypatch.setattr(pdf_exporter, 'export_pdf', lambda data: b'%PDF-test-double')

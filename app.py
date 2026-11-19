@@ -13,6 +13,7 @@ from core.input_selection import SAMPLES, build_readers, save_upload
 from core.logging_config import configure_logging
 from core.report_service import REPORT_LABELS, ReportService
 from core.schemas import DateRange
+from renderer.pdf_exporter import export_pdf, PdfExportError
 
 st.set_page_config(page_title='TechInnovate Report Generator', layout='wide')
 st.title('TechInnovate Report Generator')
@@ -100,6 +101,10 @@ if st.button('Generate Word report', type='primary', key='generate'):
                 st.session_state['generated_report'] = {'data': result.path.read_bytes(), 'filename': filename,
                     'summary': result.content.summary, 'metrics': [(m.label, m.display) for m in result.content.metrics]}
                 st.session_state['result_signature'] = signature
+                try:
+                    st.session_state['generated_report']['pdf'] = export_pdf(st.session_state['generated_report']['data'])
+                except PdfExportError as exc:
+                    st.session_state['generated_report']['pdf_error'] = str(exc)
     except ValidationError as exc:
         message = '; '.join(e['msg'] for e in exc.errors(include_input=False, include_url=False))
         logging.getLogger('report_generator.ui').error('Invalid inputs: %s', message)
@@ -113,5 +118,13 @@ if 'generated_report' in st.session_state:
     st.success('Your Word report is ready.')
     st.write(result['summary'])
     st.table([{'Metric': name, 'Value': value} for name, value in result['metrics']])
-    st.download_button('Download Word report', data=result['data'], file_name=result['filename'],
-                       mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document', key='download')
+    word_column, pdf_column = st.columns(2)
+    word_column.download_button('Download Word report', data=result['data'], file_name=result['filename'],
+                                mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document', key='download',
+                                use_container_width=True)
+    pdf_column.download_button('Download PDF report', data=result.get('pdf', b''),
+                               file_name=Path(result['filename']).with_suffix('.pdf').name,
+                               mime='application/pdf', key='download_pdf', disabled='pdf' not in result,
+                               use_container_width=True)
+    if 'pdf_error' in result:
+        st.warning(result['pdf_error'])

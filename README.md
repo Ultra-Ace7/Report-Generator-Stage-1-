@@ -122,8 +122,9 @@ policy in `sources/base.py`; this is not automatic schema discovery.
 - PDF extraction supports the supplied text-based metrics layout, not arbitrary
   layouts or scanned documents/OCR. Excel supports `.xlsx`, not legacy `.xls`.
 - Duplicate order IDs are rejected. No real customer data is included.
-- PDF export is an unimplemented bonus. Scheduling, email delivery, accounts and
-  cloud deployment are outside scope.
+- Optional PDF export converts the generated Word report using LibreOffice; see
+  [PDF setup and usage](docs/pdf-export.md). Scheduling, email delivery, accounts
+  and cloud deployment are outside scope.
 
 See [data contract](docs/data-contract.md), [readers](docs/readers.md) and
 [calculation rules](docs/report-calculations.md).
@@ -162,3 +163,11 @@ See [testing and benchmark scope](docs/testing.md) for the latest 186-case test
 run, repeated-generation and session-isolation checks, and optional synthetic
 performance measurements. Historical clean-install results above describe the
 177-case suite that existed at the time of that verification.
+
+## PDF download
+
+Generate a report to prepare both formats. **Download PDF report** appears to
+the right of **Download Word report**.
+This optional feature requires a local LibreOffice installation; Word download
+remains available if conversion fails. See [PDF export](docs/pdf-export.md) for
+setup, CLI usage and verification. The latest full test run passed 196 cases.

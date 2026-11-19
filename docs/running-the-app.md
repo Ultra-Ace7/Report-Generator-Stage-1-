@@ -97,3 +97,6 @@ The UI identifies the required formats directly: **Excel / CSV**,
 PDF input extracts text from the documented metrics layout. Select **Live public
 demo API** under Task data for an actual REST request; **Offline demo fixture**
 reads local sample data and does not satisfy a live API demonstration by itself.
+
+Optional PDF output is prepared automatically during generation.
+**Download PDF report** appears to the right of **Download Word report**. See [PDF export setup](pdf-export.md).

@@ -116,7 +116,7 @@ def test_repeated_ui_generation_replaces_result_without_duplicating_controls():
         app.button(key='generate').click().run()
         assert not app.exception
         assert len(app.success) == 1
-        assert len(app.get('download_button')) == 1
+        assert len(app.get('download_button')) == 2
         doc = Document(BytesIO(app.session_state['generated_report']['data']))
         assert len(doc.tables[1].rows) == 5
         assert len(doc.inline_shapes) == 1
@@ -139,3 +139,11 @@ def test_live_api_failure_clears_old_download_and_recovers_in_same_session(monke
     assert not app.exception and not app.error
     assert app.success and app.get('download_button')
     assert app.session_state['generated_report']['filename'].endswith('_offline.docx')
+
+
+@pytest.fixture(autouse=True)
+def stub_optional_pdf_export(monkeypatch):
+    # UI regression tests remain independent of an installed office application.
+    # Real conversion and PDF error handling have separate verification.
+    from renderer import pdf_exporter
+    monkeypatch.setattr(pdf_exporter, 'export_pdf', lambda data: b'%PDF-test-double')
